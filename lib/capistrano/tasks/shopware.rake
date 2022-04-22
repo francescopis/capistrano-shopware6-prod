@@ -7,48 +7,28 @@ set :linked_dirs, fetch(:linked_dirs, []).push(
   'public/sitemap'
 )
 
-set :linked_files, fetch(:linked_files, []).push(
-  '.psh.yaml'
-)
-
 namespace :composer do
   task :install do
     on roles(:app) do
       within release_path do
-        execute :composer, "install --prefer-dist --no-interaction --no-dev --optimize-autoloader" 
+        execute :composer, "install --prefer-dist --no-interaction --no-dev --optimize-autoloader --no-suggest"
       end
     end
   end
 end
 
 namespace :shopware do
-  namespace :psh do
-    task :execute, :param do |t, args|
-      on roles(:app) do
-        within release_path do
-          execute './psh.phar', args[:param]
+  namespace :build do
+    namespace :administration do
+        task :build do
+          invoke! 'bin/build-administration.sh'
         end
-      end
-    end
-
-    task :cache do
-      invoke! 'shopware:psh:execute', 'cache'
-    end
 
     namespace :storefront do
       task :build do
-        invoke! 'shopware:psh:execute', 'storefront:install-dependencies'
-        invoke! 'shopware:psh:execute', 'storefront:build'
+        invoke! 'bin/build-storefront.sh'
       end
     end
-
-    namespace :administration do
-      task :build do
-        invoke! 'shopware:psh:execute', 'administration:install-dependencies'
-        invoke! 'shopware:psh:execute', 'administration:build'
-      end
-    end
-  end
 
   namespace :console do
     task :execute, :param do |t, args|
@@ -67,29 +47,8 @@ namespace :shopware do
       end
     end
 
-    task :theme_compile do
-      invoke! 'shopware:console:execute', 'theme:compile'
-    end
-
     task :cache_clear do
       invoke! 'shopware:console:execute', 'cache:clear'
-    end
-
-    task :cache_warmup do
-      invoke! 'shopware:console:execute', 'cache:warmup'
-      invoke! 'shopware:console:execute', 'http:cache:warm:up'
-    end
-
-    task :assets_install do
-      invoke! 'shopware:console:execute', 'assets:install'
-    end
-
-    task :database_migrate do
-      invoke! 'shopware:console:execute', 'database:migrate --all'
-    end
-
-    task :database_migrate_destructive do
-      invoke! 'shopware:console:execute', 'database:migrate-destructive --all'
     end
 
     task :maintenance_enable do
@@ -107,12 +66,8 @@ namespace :deploy do
   after :updated, :shopware do
     invoke 'composer:install'
     invoke 'shopware:console:maintenance_enable'
-    invoke 'shopware:psh:cache' #this is needed to generate the .env file from .psh.yaml
-    invoke 'shopware:console:database_migrate'
-    invoke 'shopware:console:database_migrate_destructive'
-    invoke 'shopware:psh:administration:build'
-    invoke 'shopware:psh:storefront:build'
-    invoke 'shopware:console:assets_install'
+    invoke 'shopware:build:administration:build'
+    invoke 'shopware:build:storefront:build'
   end
 
   after :published, :shopware do
