@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.authors = ['Giacomo Mirabassi', 'Davide Borgia', 'Francesco Pisello'
+  s.authors = ['Giacomo Mirabassi', 'Davide Borgia', 'Francesco Pisello']
   s.name = %q{capistrano_shopware6_prod}
   s.version = "0.1"
   s.date = %q{2022-04-22}
